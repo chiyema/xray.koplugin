@@ -3,6 +3,7 @@ local ok_http, http = pcall(require, "socket.http")
 local ok_https, https = pcall(require, "ssl.https")
 local ok_ltn12, ltn12 = pcall(require, "ltn12")
 local ok_socket, socket = pcall(require, "socket")
+local repairUnescapedQuotes  -- forward declaration (defined at end of file)
 local ok_socketutil, socketutil = pcall(require, "socketutil")
 
 local process_ffi
@@ -410,7 +411,7 @@ function AIHelper:buildComprehensiveRequest(title, author, context, prompt_overr
                         { role = instruction_role, content = system_instruction_text },
                         { role = "user", content = prompt }
                     }, 
-                    response_format = { type = "json_object" },
+                    -- response_format = { type = "json_object" }, -- disabled: breaks Bedrock via LiteLLM
                     [token_param] = token_val
                 }
                 
@@ -2270,7 +2271,7 @@ function AIHelper:callChatGPT(prompt, config, current_model)
             { role = instruction_role, content = system_instruction_text },
             { role = "user", content = prompt }
         }, 
-        response_format = { type = "json_object" }, 
+        -- response_format = { type = "json_object" }, -- disabled: breaks Bedrock via LiteLLM 
         [token_param] = token_val 
     }
 
@@ -2387,7 +2388,7 @@ local fixTruncatedJSON = function(s) return AIHelper:fixTruncatedJSON(s) end
 -- at the next non-whitespace character: if it is a valid JSON delimiter
 -- (',', '}', ']', or end of input) the quote is a genuine string terminator; otherwise
 -- it is an unescaped interior quote and we escape it with '\'.
-local function repairUnescapedQuotes(s)
+repairUnescapedQuotes = function(s)
     local result = {}
     local i = 1
     local len = #s
